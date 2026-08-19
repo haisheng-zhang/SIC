@@ -236,6 +236,14 @@
 
   var EMPTY_UPCOMING = "No events are scheduled at the moment. New sessions are announced here.";
   var EMPTY_NOT_CONFIGURED = "Events aren't connected yet — set eventsCsvUrl in assets/content-config.js.";
+  var EVENT_LIST_IDS = ["home-events", "upcoming-events", "past-events"];
+
+  function showLoading() {
+    EVENT_LIST_IDS.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="loading-state">Loading events…</div>';
+    });
+  }
 
   function renderEvents(events) {
     render(document.getElementById("home-events"), split(events).upcoming, false, EMPTY_UPCOMING, 3);
@@ -251,6 +259,7 @@
       render(document.getElementById("upcoming-events"), [], false, EMPTY_NOT_CONFIGURED);
     }
   } else {
+    showLoading();
     fetch(csvUrl)
       .then(function (r) { return r.text(); })
       .then(function (text) { renderEvents(csvToObjects(text)); })

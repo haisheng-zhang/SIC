@@ -399,6 +399,20 @@ p:last-child { margin-bottom: 0; }
   background: var(--bg-alt);
 }
 
+.loading-state {
+  padding: 48px 28px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: var(--bg-alt);
+  animation: sic-pulse 1.4s ease-in-out infinite;
+}
+@keyframes sic-pulse {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+
 .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
 .filter-btn {
   padding: 8px 16px;
@@ -631,4 +645,5 @@ a.logo-cell span.textlink-hint { color: var(--accent); text-transform: none; let
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
+  .loading-state { animation: none; }
 }
