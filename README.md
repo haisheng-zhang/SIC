@@ -7,80 +7,71 @@ browser exactly as written. Hosted on GitHub Pages; pushing to `main` publishes 
 
 ## Adding an event
 
-**Edit one file: `assets/events.js`.** Nothing else, ever.
+**Edit the Google Sheet. Nothing else, ever — not this repo, not any code file.**
 
-An event is five fields: a title, a date, a topic, one sentence, and a link out.
+Events live in a Google Sheet, published to the web as CSV. The site fetches that CSV every time
+a page loads and renders whatever rows are in it. `assets/content-config.js` holds the one URL
+that connects the two — set once, when the sheet is first published, and never touched again.
 
-```js
-{
-  title:   "Name of the event",
-  date:    "2026-09-18",
-  topic:   "ai",
-  summary: "One sentence about the event.",
-  link:    "https://the-external-page.com"
-},
-```
+The sheet's "Events" tab has one row per event, columns:
 
-### Step by step
+| Column | Required | Notes |
+|---|---|---|
+| `title` | yes | |
+| `date_start` | yes | **Exactly `YYYY-MM-DD`, as plain text** — format the column as Plain text before typing dates in, or Sheets may silently reformat them and the row will stop showing up. |
+| `date_end` | no | Only for multi-day events. Same format. |
+| `topic` | no | `ai`, `blockchain`, `food-health`, comma-separated for several. Purely a tag shown on the card — doesn't route anywhere. |
+| `summary` | no | One sentence, shown on the card. |
+| `venue` | no | |
+| `external_url` | no | An outbound link (e.g. a LinkedIn post). |
+| `detail_doc_url` | no | See below. |
+| `media_folder_url` | no | See below. |
+| `notes` | no | For you — the site never reads this column. |
 
-1. Open `assets/events.js`.
-2. Copy the block above (it is also in the comment at the top of that file).
-3. Paste it inside the `window.sicEvents = [ ... ]` list.
-4. Fill in the five fields.
-5. Save and commit.
+No ordering column — events always sort by `date_start`, upcoming soonest-first, past
+newest-first. No `visible`/`featured` columns either — every row in the sheet shows; delete a
+row (or blank its `title`) to take an event off the site.
 
-### An event covering several areas
+### Past events: photos, videos, full write-ups
 
-Many events span more than one focus area. Separate the topics with a comma — order does not
-matter and spaces are fine:
+A past event shows a **View recap** button when `detail_doc_url` or `media_folder_url` is
+filled in — checked in that order:
 
-```js
-topic: "ai, blockchain"
-```
+1. **`detail_doc_url` set** → embeds it. A Google Doc link shows the full write-up; a plain
+   Drive file link (a PDF, one image, a slide deck) shows that file in Drive's own preview
+   instead — useful when the "recap" is really just one flyer, not a written article.
+2. **No `detail_doc_url`, but `media_folder_url` set** → embeds that Drive folder as a browsable
+   photo/video grid. Set the folder to **Anyone with the link can view**. Add or remove files any
+   time — the site always shows what's in there right now, nothing to re-publish.
+3. **Neither set** → the card just shows title / date / summary. Normal, not an error.
 
-The event then appears on **both** the AI page and the Blockchain page, and shows a tag for
-each. It still counts as one event everywhere else (homepage, Events page), so it is listed
-once, not twice.
+Paste whatever link Google's Share dialog gives you into either column — the site rewrites it
+into an embeddable link automatically.
 
-**Never duplicate an event to cover two areas.** One entry with two topics is correct; two
-entries with one topic each will show up as two separate events on the homepage and the
-Events page.
+Both links are prepared the same way every time: put the one document and the `img/` folder for
+an event under `assets/events/<event>/` locally, upload that whole folder to Drive, then paste
+the document's link into `detail_doc_url` and the `img/` folder's link into `media_folder_url`.
+See `assets/events/README.md` for the exact steps — that folder is local staging for the Drive
+upload only, the deployed site never reads it directly.
 
-### What happens by itself
+### One-time setup (already done once — here for reference)
 
-- A **future** date shows under **Upcoming**, soonest first.
-- A **past** date moves itself to **Past**, newest first.
-- The **homepage** shows the next 3 upcoming events.
-- The **AI / Blockchain / Food & Health** pages each show only their own topic.
+1. `assets/events/events-template.xlsx` has the current columns and every existing event,
+   pre-filled.
+2. Upload it to Google Drive, open with Google Sheets, keep it as a Sheet from then on.
+3. **File → Share → Publish to web** → pick the **Events** sheet (not "Entire document") →
+   format **CSV** → Publish.
+4. Paste the URL it gives you into `eventsCsvUrl` in `assets/content-config.js`, commit, done.
+   Google republishes that URL automatically within a minute or two of every edit to the sheet —
+   this step never needs repeating.
 
-You never move or delete an event. Old events look after themselves.
+### If the events page ever goes blank
 
-### The three rules
-
-| Rule | Why |
-|---|---|
-| Every topic must be `ai`, `blockchain` or `food-health` | It decides which focus pages the event appears on. Use commas for several. An unrecognised name is silently ignored — if a tag goes missing, check the spelling. |
-| `date` must be exactly `YYYY-MM-DD` | It drives upcoming/past sorting. |
-| Every value in `"double quotes"`, every block ends with `},` | It is a JavaScript file. |
-
-If the event lists ever go blank, a missing comma or quote in the last edit is why.
-
-### Removing an event
-
-Delete its block including the trailing comma. Normally unnecessary — past events move
-themselves to the Past section.
-
-### Editing from the browser
-
-A colleague with write access can publish without any local setup: open `assets/events.js`
-on GitHub, click the pencil icon, paste the block, click **Commit changes**. No CMS, no OAuth,
-no extra login.
-
-### Currently in the file
-
-One real event — the Agentic Decentralized Finance Executive Forum and Media Session
-(6 Aug 2026), tagged `"ai, blockchain"` so it appears on both focus pages. The Food & Health
-page has no events yet and shows an empty state.
+- `eventsCsvUrl` in `assets/content-config.js` is empty, wrong, or the sheet was unpublished —
+  check the browser console for `SIC: failed to load events from ...`.
+- A `date_start` isn't exactly `YYYY-MM-DD` — that row is silently skipped (see the date-format
+  warning above).
+- Nothing else can break this — there's no other moving part.
 
 ---
 
@@ -88,18 +79,18 @@ page has no events yet and shows an empty state.
 
 ```
 index.html          Homepage
-about.html          How it all started, milestones
-ai.html             Focus area — Artificial Intelligence (+ its events)
-blockchain.html     Focus area — Blockchain & DeFi (+ its events)
-food-health.html    Focus area — Food & Health (+ its events)
+about.html          How it all started, milestones, impact, leadership, ecosystem partners
+services.html       Business Transformation / Internationalisation / Skills Development / Innovation
 events.html         All events, upcoming and past
-partners.html       SFAA alliance, the associations, SFU
+partners.html       SFAA alliance in detail — the 7 associations, SFU, ministerial patronage
 contact.html        Email
 
-assets/styles.css   All styling for every page
-assets/site.js      Navigation, event rendering
-assets/events.js    >>> EVENT DATA — the only file you edit <<<
-assets/img/         Favicon; put images here
+assets/styles.css       All styling for every page
+assets/site.js          Navigation; fetches, parses and renders events from the CSV
+assets/content-config.js   >>> ONE URL — the published Events sheet's CSV link <<<
+assets/img/             Favicon, logo
+assets/events/          Local staging area for Drive uploads — NOT read by the deployed site,
+                        see its own README.md and events-template.xlsx
 
 content/history.md  Source material. Everything on the site traces back to this.
 .nojekyll           Tells GitHub Pages to serve files as-is
@@ -132,10 +123,21 @@ constraint, not an accident.
 - The partnership fosters stakeholders large, medium, small and micro to work on projects that
   benefit the industry.
 
+- Leadership, Chartered Members, Ecosystem Partners and National Innovation Centre affiliations
+  (About page) — from the "LEADERSHIP" / "CHARTERED MEMBERS" / "ECOSYSTEM PARTNERS" sections
+  added to `content/history.md`, sourced from `SIC_Website(Content)R.docx`.
+- The four service pillars and their line items (Services page) — from the "SERVICES" section of
+  `content/history.md`, same source document. Items with no further detail in the source are
+  marked **In development** on the site rather than described as active.
+- The backfilled past events (Events page) — from the "HISTORICAL EVENTS" section of
+  `content/history.md`, each traced to a specific file in SICBizDev. Their actual data now lives
+  in the Events Google Sheet (see "Adding an event" above), pre-filled from the same facts.
+
 **Deliberately NOT stated anywhere:** SIC's founding year (the source says "in line with Budget
-2023", which is not the same as "founded in 2023"), any service offering, methodology, team
-member, office address, phone number, client, case study, or capability in AI, blockchain or
-food-health beyond naming them as focus areas.
+2023", which is not the same as "founded in 2023"), any office address, phone number, client
+name, or case-study detail beyond what the source documents themselves state. Where a source
+date is uncertain (a couple of the backfilled events), `content/history.md` says so — treat those
+as unconfirmed until checked against the original material.
 
 If you add copy later, add the underlying fact to `content/history.md` first.
 
@@ -176,8 +178,22 @@ Every push to `main` redeploys.
 - [ ] Association logos on the homepage and Partners page render as text. To use real logos,
       put the files in `assets/img/` and replace the text inside a `.logo-cell` with
       `<img src="assets/img/sfma.png" alt="SFMA" />`.
-- [ ] No photographs anywhere. Event and ceremony photos would strengthen the site.
+- [ ] `assets/content-config.js` → `eventsCsvUrl` is still empty. Until the Events Google Sheet
+      exists and is published (see "Adding an event" above), every events list on the site shows
+      an empty state — this is the one remaining thing that needs doing before events show at
+      all.
+- [ ] Three events in `events-template.xlsx` have approximate dates only (see their `notes`
+      column, and `content/history.md` → "HISTORICAL EVENTS") — confirm against the original
+      material once in the sheet.
+- [ ] "Diplomatic Network" in `events-template.xlsx` has a placeholder summary — it's a folder
+      Sandy created herself, not sourced from SICBizDev, so there was nothing to write from.
+- [ ] No event has a `detail_doc_url` or `media_folder_url` yet — every past card will show text
+      only until Drive uploads happen. Material for each is staged in `assets/events/` (see its
+      README), ready to upload.
 - [ ] Postal address and phone number are not on the site. Add to `contact.html` when available.
+- [ ] Services items marked **In development** on `services.html` have a name from the old
+      sitemap but no described offering — write real copy (or drop the item) before promoting it
+      out of that state.
 
 ---
 

@@ -1,0 +1,5 @@
+# Local staging area for Google Drive uploads — not part of the deployed site.
+# See assets/events/README.md.
+/assets/events/
+
+.DS_Store
